@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES6",                          // or ESNext
+    "module": "CommonJS",                     // or ESNext for ESM
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
