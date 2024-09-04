@@ -1,6 +1,7 @@
 "use strict";
 // src/chatbot.ts
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = getResponse;
 function getResponse(message) {
     const lowerCaseMessage = message.toLowerCase();
     if (lowerCaseMessage.includes('hello')) {
@@ -14,4 +15,3 @@ function getResponse(message) {
     }
     return 'Sorry, I did not understand that. Can you please rephrase?';
 }
-exports.default = getResponse;
