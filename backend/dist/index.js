@@ -65,6 +65,35 @@ app.post('/api/v1/signup', (0, zodCheck_1.validateSchema)(zod_1.userSchema), aut
     }
     res.status(200).json({ message: 'Signedup successfully' });
 }));
+app.post('/api/v1/chat', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const message = req.body.message;
+    const sessionId = req.query.id;
+    console.log(sessionId);
+    return res.status(200).json({ sessionId });
+    // const email = req.body.email;
+    // const findUser = await User.findOne({ email });
+    // const salt = await bcrypt.genSalt(hashSalt);
+    // const hashedMessage = await bcrypt.hash(message, salt);
+    // const chatSession = new ChatSession({
+    //     userId : findUser?._id.toString()
+    // })
+    // chatSession.save();
+    // let chatMessage = new ChatMessage({
+    //     chatSessionId : chatSession._id,
+    //     sender : 'user',
+    //     message : hashedMessage 
+    // })
+    // chatMessage.save();
+    // const answer = getResponse(message);
+    // const hashedReply = await bcrypt.hash(answer, salt);
+    // chatMessage = new ChatMessage({
+    //     chatSessionId : chatSession._id,
+    //     sender : 'system',
+    //     message : hashedReply
+    // })
+    // chatMessage.save();
+    // return res.status(200).json({ answer });
+}));
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });

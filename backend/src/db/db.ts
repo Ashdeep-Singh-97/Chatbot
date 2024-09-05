@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Connect to MongoDB
 const mongoURI = process.env.DB_URL || ""; // Replace with your MongoDB URI
 mongoose.connect(mongoURI)
   .then(() => {
@@ -14,19 +12,27 @@ mongoose.connect(mongoURI)
     console.error('Error connecting to the database:', error);
   });
 
-// Define a schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 }, {
   timestamps: true,
 });
-
-userSchema.methods.comparePassword = async function(candidatePassword: any) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-// Create a model from the schema
 const User = mongoose.model('User', userSchema);
 
-// Export the model
-export { User };
+const ChatSessionSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdAt: { type: Date, default: Date.now },
+  status: { type: String, enum: ['active', 'completed', 'terminated'], default: 'active' },
+});
+const ChatSession = mongoose.model('ChatSession', ChatSessionSchema);
+
+const ChatMessageSchema = new mongoose.Schema({
+  chatSessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'ChatSession', required: true },
+  sender: { type: String, enum: ['user', 'system'], required: true },
+  message: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+});
+const ChatMessage = mongoose.model('ChatMessage', ChatMessageSchema);
+
+export { User, ChatSession, ChatMessage };

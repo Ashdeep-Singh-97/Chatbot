@@ -40,7 +40,8 @@ function checkAuth(req, res, next) {
             }
         }
         catch (dbError) {
-            return res.status(500).json({ dbError });
+            console.error("Database error:", dbError); // Log the complete error
+            return res.status(500).json({ error: 'Internal server error' });
         }
         next();
     }));

@@ -1,12 +1,11 @@
 import getResponse from './chatbot/chatbot';
 import express from 'express';
 import dotenv from 'dotenv';
-import {User} from './db/db'; 
+import {ChatMessage, ChatSession, User} from './db/db'; 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { checkAuth } from './middlewares/authMiddleware';
 import { userSchema } from './zod/zod';
-import { z } from 'zod';
 import { validateSchema } from './zod/zodCheck';
 
 const app = express();
@@ -70,6 +69,34 @@ app.post('/api/v1/signup', validateSchema(userSchema), checkAuth, async (req: an
 
     res.status(200).json({ message: 'Signedup successfully' });
 });
+
+app.post('/api/v1/chat', checkAuth, async (req: any, res: any) => {
+    const message = req.body.message;
+    const sessionId = req.query.id;
+    
+    const salt = await bcrypt.genSalt(hashSalt);
+    const hashedMessage = await bcrypt.hash(message, salt);
+    
+    let chatMessage = new ChatMessage({
+        chatSessionId : sessionId,
+        sender : 'user',
+        message : hashedMessage 
+    })
+    chatMessage.save();
+
+    const answer = getResponse(message);
+
+    const hashedReply = await bcrypt.hash(answer, salt);
+
+    chatMessage = new ChatMessage({
+        chatSessionId : sessionId,
+        sender : 'system',
+        message : hashedReply
+    })
+    chatMessage.save();
+
+    return res.status(200).json({ answer });
+})
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);

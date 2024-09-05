@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import {User} from '../db/db';
+import { User } from '../db/db';
 
 // Define your JWT secret or public key here (ideally store in environment variables)
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -19,18 +19,20 @@ export function checkAuth(req: Request, res: Response, next: NextFunction): any 
       return res.status(403).json({ message: 'Invalid token' });
     }
     try {
-      const user = await User.findOne({email});
+      const user = await User.findOne({ email });
+
       const tokenUserId = (decoded as { id: string }).id;
       if (!user) {
-          return res.status(404).json({ error: 'User not found' });
+        return res.status(404).json({ error: 'User not found' });
       }
 
       if (user._id.toString() !== tokenUserId) {
-          return res.status(403).json({ error: 'User ID does not match' });
+        return res.status(403).json({ error: 'User ID does not match' });
       }
     }
-      catch (dbError) {
-        return res.status(500).json({ dbError });
+    catch (dbError) {
+      console.error("Database error:", dbError); // Log the complete error
+      return res.status(500).json({ error: 'Internal server error' });
     }
     next();
   });
