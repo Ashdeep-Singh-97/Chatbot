@@ -3,18 +3,25 @@ import express from 'express';
 import dotenv from 'dotenv';
 import {User} from './db/db'; 
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { checkAuth } from './middlewares/authMiddleware';
+import { userSchema } from './zod/zod';
+import { z } from 'zod';
+import { validateSchema } from './zod/zodCheck';
 
 const app = express();
 app.use(express.json());
 dotenv.config();
 
 const port = process.env.PORT;
-const hashSalt = process.env.hashSalt || 100;
+const hashSalt = parseInt(process.env.hashSalt || '10', 10);
 
-app.post('/api/v1/signin', async (req: any, res: any) => {
+const JWT_SECRET = process.env.JWT_SECRET || 'Secret';
+
+app.post('/api/v1/signin', validateSchema(userSchema), async (req: any, res: any) => {
     const email = req.body.email;
     const password = req.body.password;
-
+    
     const findUser = await User.findOne({ email });
 
     if(findUser)
@@ -22,8 +29,8 @@ app.post('/api/v1/signin', async (req: any, res: any) => {
         console.log("User Exists");
         return res.status(400).json({ error: 'User Exists' });
     }
-
-    const hashedPassword = await bcrypt.hash(password, hashSalt);
+    const salt = await bcrypt.genSalt(hashSalt);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = new User({
         email,
@@ -37,11 +44,11 @@ app.post('/api/v1/signin', async (req: any, res: any) => {
       .catch((error) => {
         console.error('Error saving user:', error);
       });
-
-    res.status(200).json({ message: 'Signedup successfully' });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET);
+    res.status(200).json({ token });
 });
 
-app.post('/api/v1/signup', async (req: any, res: any) => {
+app.post('/api/v1/signup', validateSchema(userSchema), checkAuth, async (req: any, res: any) => {
     const email = req.body.email;
     const password = req.body.password;
 

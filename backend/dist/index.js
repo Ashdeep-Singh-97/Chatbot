@@ -16,13 +16,17 @@ const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = require("./db/db");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const authMiddleware_1 = require("./middlewares/authMiddleware");
+const zod_1 = require("./zod/zod");
+const zodCheck_1 = require("./zod/zodCheck");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 dotenv_1.default.config();
 const port = process.env.PORT;
-const hashSalt = process.env.hashSalt || 100;
-console.log(hashSalt);
-app.post('/api/v1/signin', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const hashSalt = parseInt(process.env.hashSalt || '10', 10);
+const JWT_SECRET = process.env.JWT_SECRET || 'Secret';
+app.post('/api/v1/signin', (0, zodCheck_1.validateSchema)(zod_1.userSchema), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
     const password = req.body.password;
     const findUser = yield db_1.User.findOne({ email });
@@ -30,7 +34,8 @@ app.post('/api/v1/signin', (req, res) => __awaiter(void 0, void 0, void 0, funct
         console.log("User Exists");
         return res.status(400).json({ error: 'User Exists' });
     }
-    const hashedPassword = yield bcrypt_1.default.hash(password, hashSalt);
+    const salt = yield bcrypt_1.default.genSalt(hashSalt);
+    const hashedPassword = yield bcrypt_1.default.hash(password, salt);
     const user = new db_1.User({
         email,
         password: hashedPassword
@@ -42,9 +47,10 @@ app.post('/api/v1/signin', (req, res) => __awaiter(void 0, void 0, void 0, funct
         .catch((error) => {
         console.error('Error saving user:', error);
     });
-    res.status(200).json({ message: 'Signedup successfully' });
+    const token = jsonwebtoken_1.default.sign({ id: user._id }, JWT_SECRET);
+    res.status(200).json({ token });
 }));
-app.post('/api/v1/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/api/v1/signup', (0, zodCheck_1.validateSchema)(zod_1.userSchema), authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
     const password = req.body.password;
     const findUser = yield db_1.User.findOne({ email });
