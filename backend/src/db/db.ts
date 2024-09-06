@@ -31,6 +31,8 @@ const ChatMessageSchema = new mongoose.Schema({
   chatSessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'ChatSession', required: true },
   sender: { type: String, enum: ['user', 'system'], required: true },
   message: { type: String, required: true },
+  key: { type: String, required: true }, // Add this field for encryption key
+  iv: { type: String, required: true },  // Add this field for initialization vector
   timestamp: { type: Date, default: Date.now },
 });
 const ChatMessage = mongoose.model('ChatMessage', ChatMessageSchema);

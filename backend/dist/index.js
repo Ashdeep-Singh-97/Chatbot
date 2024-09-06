@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const chatbot_1 = __importDefault(require("./chatbot/chatbot"));
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = require("./db/db");
@@ -20,6 +21,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const authMiddleware_1 = require("./middlewares/authMiddleware");
 const zod_1 = require("./zod/zod");
 const zodCheck_1 = require("./zod/zodCheck");
+const encryption_1 = require("./encryption/encryption");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 dotenv_1.default.config();
@@ -65,34 +67,89 @@ app.post('/api/v1/signup', (0, zodCheck_1.validateSchema)(zod_1.userSchema), aut
     }
     res.status(200).json({ message: 'Signedup successfully' });
 }));
+app.post('/api/v1/new', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const email = req.body.email;
+    const findUser = yield db_1.User.findOne({ email });
+    const session = new db_1.ChatSession({
+        userId: findUser === null || findUser === void 0 ? void 0 : findUser._id.toString()
+    });
+    yield session.save();
+    return res.status(200).json({ session });
+}));
 app.post('/api/v1/chat', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const message = req.body.message;
     const sessionId = req.query.id;
-    console.log(sessionId);
-    return res.status(200).json({ sessionId });
-    // const email = req.body.email;
-    // const findUser = await User.findOne({ email });
-    // const salt = await bcrypt.genSalt(hashSalt);
-    // const hashedMessage = await bcrypt.hash(message, salt);
-    // const chatSession = new ChatSession({
-    //     userId : findUser?._id.toString()
-    // })
-    // chatSession.save();
-    // let chatMessage = new ChatMessage({
-    //     chatSessionId : chatSession._id,
-    //     sender : 'user',
-    //     message : hashedMessage 
-    // })
-    // chatMessage.save();
-    // const answer = getResponse(message);
-    // const hashedReply = await bcrypt.hash(answer, salt);
-    // chatMessage = new ChatMessage({
-    //     chatSessionId : chatSession._id,
-    //     sender : 'system',
-    //     message : hashedReply
-    // })
-    // chatMessage.save();
-    // return res.status(200).json({ answer });
+    const { key, iv } = (0, encryption_1.generateKeyAndIv)(encryption_1.encryptionKeyLength, encryption_1.encryptionIvLength);
+    const encryptedMessage = (0, encryption_1.encryptText)(message, key, iv);
+    let chatMessage = new db_1.ChatMessage({
+        chatSessionId: sessionId,
+        sender: 'user',
+        message: encryptedMessage,
+        key: key.toString('hex'),
+        iv: iv.toString('hex')
+    });
+    yield chatMessage.save();
+    const answer = (0, chatbot_1.default)(message);
+    const encryptedReply = (0, encryption_1.encryptText)(answer, key, iv);
+    chatMessage = new db_1.ChatMessage({
+        chatSessionId: sessionId,
+        sender: 'system',
+        message: encryptedReply,
+        key: key.toString('hex'),
+        iv: iv.toString('hex')
+    });
+    yield chatMessage.save();
+    res.status(200).json({ answer });
+}));
+app.post('/api/v1/history', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const email = req.body.email;
+    try {
+        const findUser = yield db_1.User.findOne({ email });
+        if (!findUser) {
+            console.log("User Does Not Exist");
+            return res.status(404).json({ error: 'User Does Not Exist' });
+        }
+        const id = findUser._id.toString();
+        const history = yield db_1.ChatSession.find({ userId: id });
+        if (history.length === 0) {
+            return res.status(404).json({ message: 'No chat sessions found for the user.' });
+        }
+        const ids = history.map(item => item._id);
+        const chats = yield db_1.ChatMessage.aggregate([
+            { $match: { chatSessionId: { $in: ids } } },
+            {
+                $group: {
+                    _id: "$chatSessionId",
+                    message: { $first: "$message" },
+                    key: { $first: "$key" },
+                    iv: { $first: "$iv" },
+                    sender: { $first: "$sender" },
+                    timestamp: { $first: "$timestamp" }
+                }
+            }
+        ]);
+        if (chats.length > 0) {
+            const decryptedMessages = chats.map(chat => {
+                try {
+                    const key = Buffer.from(chat.key, 'hex');
+                    const iv = Buffer.from(chat.iv, 'hex');
+                    return (0, encryption_1.decryptText)(chat.message, key, iv);
+                }
+                catch (error) {
+                    console.error('Error decrypting message:', error);
+                    return 'Error decrypting message';
+                }
+            });
+            return res.status(200).json({ decryptedMessages });
+        }
+        else {
+            return res.status(404).json({ message: 'No chat found for the given chatSessionId.' });
+        }
+    }
+    catch (error) {
+        console.error('Error processing request:', error);
+        return res.status(500).json({ error: 'Server error' });
+    }
 }));
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
