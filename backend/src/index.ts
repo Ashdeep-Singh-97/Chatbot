@@ -8,17 +8,23 @@ import { checkAuth } from './middlewares/authMiddleware';
 import { userSchema } from './zod/zod';
 import { validateSchema } from './zod/zodCheck';
 import { generateKeyAndIv, encryptText, decryptText, encryptionIvLength, encryptionKeyLength } from './encryption/encryption';
+import cors from 'cors';
 
 const app = express();
+const corsOptions = {
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 dotenv.config();
 
 const port = process.env.PORT;
 const hashSalt = parseInt(process.env.hashSalt || '10', 10);
-
 const JWT_SECRET = process.env.JWT_SECRET || 'Secret';
 
-app.post('/api/v1/signin', validateSchema(userSchema), async (req: any, res: any) => {
+app.post('/api/v1/signup', validateSchema(userSchema), async (req: any, res: any) => {
     const email = req.body.email;
     const password = req.body.password;
 
@@ -47,7 +53,7 @@ app.post('/api/v1/signin', validateSchema(userSchema), async (req: any, res: any
     res.status(200).json({ token });
 });
 
-app.post('/api/v1/signup', validateSchema(userSchema), checkAuth, async (req: any, res: any) => {
+app.post('/api/v1/signin', validateSchema(userSchema), async (req: any, res: any) => {
     const email = req.body.email;
     const password = req.body.password;
 
@@ -65,7 +71,8 @@ app.post('/api/v1/signup', validateSchema(userSchema), checkAuth, async (req: an
         return res.status(400).json({ error: 'Wrong Password' });
     }
 
-    res.status(200).json({ message: 'Signedup successfully' });
+    const token = jwt.sign({ id: findUser._id }, JWT_SECRET);
+    res.status(200).json({ token });
 });
 
 app.post('/api/v1/new', checkAuth, async (req: any, res: any) => {

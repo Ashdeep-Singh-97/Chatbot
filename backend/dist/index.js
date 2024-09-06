@@ -22,13 +22,20 @@ const authMiddleware_1 = require("./middlewares/authMiddleware");
 const zod_1 = require("./zod/zod");
 const zodCheck_1 = require("./zod/zodCheck");
 const encryption_1 = require("./encryption/encryption");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
+const corsOptions = {
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 dotenv_1.default.config();
 const port = process.env.PORT;
 const hashSalt = parseInt(process.env.hashSalt || '10', 10);
 const JWT_SECRET = process.env.JWT_SECRET || 'Secret';
-app.post('/api/v1/signin', (0, zodCheck_1.validateSchema)(zod_1.userSchema), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/api/v1/signup', (0, zodCheck_1.validateSchema)(zod_1.userSchema), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
     const password = req.body.password;
     const findUser = yield db_1.User.findOne({ email });
@@ -52,7 +59,7 @@ app.post('/api/v1/signin', (0, zodCheck_1.validateSchema)(zod_1.userSchema), (re
     const token = jsonwebtoken_1.default.sign({ id: user._id }, JWT_SECRET);
     res.status(200).json({ token });
 }));
-app.post('/api/v1/signup', (0, zodCheck_1.validateSchema)(zod_1.userSchema), authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/api/v1/signin', (0, zodCheck_1.validateSchema)(zod_1.userSchema), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
     const password = req.body.password;
     const findUser = yield db_1.User.findOne({ email });
@@ -65,7 +72,8 @@ app.post('/api/v1/signup', (0, zodCheck_1.validateSchema)(zod_1.userSchema), aut
         console.log("Wrong Password");
         return res.status(400).json({ error: 'Wrong Password' });
     }
-    res.status(200).json({ message: 'Signedup successfully' });
+    const token = jsonwebtoken_1.default.sign({ id: findUser._id }, JWT_SECRET);
+    res.status(200).json({ token });
 }));
 app.post('/api/v1/new', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
