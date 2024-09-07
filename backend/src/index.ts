@@ -120,6 +120,26 @@ app.post('/api/v1/chat', checkAuth, async (req, res) => {
     res.status(200).json({ answer });
 });
 
+app.post('/api/v1/session', checkAuth, async (req, res) => {
+    const sessionId = req.query.id;
+
+    let chatMessage = await ChatMessage.find({ chatSessionId: sessionId });
+    const decryptedMessages = chatMessage.map(msg => {
+        // Convert key and iv from hex strings to Buffers
+        const keyBuffer = Buffer.from(msg.key, 'hex');
+        const ivBuffer = Buffer.from(msg.iv, 'hex');
+  
+        return {
+          chatSessionId: msg.chatSessionId,
+          sender: msg.sender,
+          message: decryptText(msg.message, keyBuffer, ivBuffer), // Decrypt message with Buffer key and iv
+          timestamp: msg.timestamp
+        };
+      });
+  
+    res.status(200).json({ decryptedMessages });
+});
+
 app.post('/api/v1/history', checkAuth, async (req, res) => {
     const email = req.body.email;
 
@@ -159,13 +179,16 @@ app.post('/api/v1/history', checkAuth, async (req, res) => {
                 try {
                     const key = Buffer.from(chat.key, 'hex');
                     const iv = Buffer.from(chat.iv, 'hex');
-                    return decryptText(chat.message, key, iv);
+                    return {
+                        chatSessionId: chat._id,
+                        text: decryptText(chat.message, key, iv),
+                        sender: chat.sender
+                      };
                 } catch (error) {
                     console.error('Error decrypting message:', error);
                     return 'Error decrypting message';
                 }
             });
-
             return res.status(200).json({ decryptedMessages });
         } else {
             return res.status(404).json({ message: 'No chat found for the given chatSessionId.' });

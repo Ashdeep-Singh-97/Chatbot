@@ -109,6 +109,22 @@ app.post('/api/v1/chat', authMiddleware_1.checkAuth, (req, res) => __awaiter(voi
     yield chatMessage.save();
     res.status(200).json({ answer });
 }));
+app.post('/api/v1/session', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const sessionId = req.query.id;
+    let chatMessage = yield db_1.ChatMessage.find({ chatSessionId: sessionId });
+    const decryptedMessages = chatMessage.map(msg => {
+        // Convert key and iv from hex strings to Buffers
+        const keyBuffer = Buffer.from(msg.key, 'hex');
+        const ivBuffer = Buffer.from(msg.iv, 'hex');
+        return {
+            chatSessionId: msg.chatSessionId,
+            sender: msg.sender,
+            message: (0, encryption_1.decryptText)(msg.message, keyBuffer, ivBuffer), // Decrypt message with Buffer key and iv
+            timestamp: msg.timestamp
+        };
+    });
+    res.status(200).json({ decryptedMessages });
+}));
 app.post('/api/v1/history', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
     try {
@@ -141,7 +157,11 @@ app.post('/api/v1/history', authMiddleware_1.checkAuth, (req, res) => __awaiter(
                 try {
                     const key = Buffer.from(chat.key, 'hex');
                     const iv = Buffer.from(chat.iv, 'hex');
-                    return (0, encryption_1.decryptText)(chat.message, key, iv);
+                    return {
+                        chatSessionId: chat._id,
+                        text: (0, encryption_1.decryptText)(chat.message, key, iv),
+                        sender: chat.sender
+                    };
                 }
                 catch (error) {
                     console.error('Error decrypting message:', error);
