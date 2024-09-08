@@ -78,14 +78,24 @@ app.post('/api/v1/signin', validateSchema(userSchema), async (req: any, res: any
 app.post('/api/v1/new', checkAuth, async (req: any, res: any) => {
     const email = req.body.email;
 
+  try {
+    // Find the user
     const findUser = await User.findOne({ email });
+    if (!findUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
+    // Create and save a new chat session
     const session = new ChatSession({
-        userId : findUser?._id.toString()
-    })
+      userId: findUser._id.toString()
+    });
     await session.save();
 
     return res.status(200).json({ session });
+  } catch (error) {
+    console.error('Error creating new chat session:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 })
 
 app.post('/api/v1/chat', checkAuth, async (req, res) => {
@@ -104,7 +114,7 @@ app.post('/api/v1/chat', checkAuth, async (req, res) => {
     });
     await chatMessage.save();
 
-    const answer = getResponse(message);
+    const answer = await getResponse(message);
 
     const encryptedReply = encryptText(answer, key, iv);
 

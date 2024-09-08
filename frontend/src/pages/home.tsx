@@ -1,35 +1,178 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import Cookies from 'js-cookie'; // Ensure you have this package installed
+import Cookies from 'js-cookie';
 
-const MAX_TITLE_LENGTH = 30; // Define maximum length for chat title
+const MAX_TITLE_LENGTH = 30;
 
 const Dashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const user = location.state?.user || { email: 'Guest' };
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'server' | 'system' }[]>([]);
-  const [chatHistory, setChatHistory] = useState<{ id: string; title: string }[]>([]);
-  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'system' }[]>([]);
+  const [chatHistory, setChatHistory] = useState<{ chatSessionId: string; text: string; sender: 'user' | 'server' | 'system' }[]>([]);
+  const [activeChat, setActiveChat] = useState("");
+  const [creatingNewChat, setCreatingNewChat] = useState(false);
 
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token) {
+      navigate('/'); // Redirect to login page if no token
+    } else {
+      fetchChatHistory();
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (activeChat) {
+      fetchChatMessages();
+    }
+  }, [activeChat]);
+
+  const fetchChatHistory = async () => {
+    try {
+      const token = Cookies.get('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await axios.post(
+        'http://localhost:3500/api/v1/history',
+        { email: user.email },
+        {
+          headers: {
+            'authorization': token
+          }
+        }
+      );
+      setChatHistory(response.data.decryptedMessages);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+    }
+  };
+
+  const fetchChatMessages = async () => {
+    if (!activeChat) return;
+
+    try {
+      const token = Cookies.get('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await axios.post(
+        `http://localhost:3500/api/v1/session?id=${encodeURIComponent(activeChat)}`,
+        { email: user.email },
+        {
+          headers: {
+            'authorization': token
+          }
+        }
+      );
+      const messagesData = response.data.decryptedMessages.map((msg: any) => ({
+        text: msg.message,
+        sender: msg.sender as 'user' | 'system',
+        timestamp: msg.timestamp
+      }));
+      setMessages(messagesData);
+    } catch (error) {
+      console.error('Error fetching chat messages:', error);
+    }
+  };
+
+  const handleSend = async () => {
+    if (message.trim() === '') return;
+
+    let currentChatId = activeChat;
+
+    if (!currentChatId) {
+      currentChatId = await handleNewChat();
+      console.log(currentChatId);
+      if (!currentChatId) {
+        console.error('Failed to create new chat');
+        return;
+      }
+      setActiveChat(currentChatId); // Ensure the state is updated
+    }
+
+    try {
+      const token = Cookies.get('token');
+      if (!token) throw new Error('No token found');
+      console.log("ID before hitting chat endpoint in handlesend",currentChatId);
+      const response = await axios.post(
+        `http://localhost:3500/api/v1/chat?id=${encodeURIComponent(currentChatId)}`,
+        { email: user.email, message: message },
+        {
+          headers: {
+            'authorization': token
+          }
+        }
+      );
+
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { text: message, sender: 'user' },
+        { text: response.data.answer, sender: 'system' }
+      ]);
+
+      setMessage('');
+      await fetchChatHistory();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const handleNewChat = async () => {
+    if (creatingNewChat) return;
+
+    setCreatingNewChat(true);
+
+    try {
+      const token = Cookies.get('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await axios.post(
+        'http://localhost:3500/api/v1/new',
+        { email: user.email },
+        {
+          headers: {
+            'authorization': token
+          }
+        }
+      );
+
+      const newSessionId = response.data.session._id;
+      setActiveChat(newSessionId);
+      await fetchChatHistory();
+      return newSessionId;
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    } finally {
+      setCreatingNewChat(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Cookies.remove('token'); // Remove the token cookie
+    navigate('/'); // Redirect to the home page or login page
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-200 p-4 shadow-md">
-        <button className="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button
+          className="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          onClick={() => window.location.reload()}
+          disabled={creatingNewChat}
+        >
           Start New Chat
         </button>
         <ul>
           {chatHistory.map(chat => (
             <li
-              key={chat.id}
-              className={`cursor-pointer mb-2 p-2 rounded-lg ${activeChat === chat.id ? 'bg-blue-600 text-white' : 'bg-gray-300'
-                }`}
+              key={chat.chatSessionId}
+              className={`cursor-pointer mb-2 p-2 rounded-lg ${activeChat === chat.chatSessionId ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
+              onClick={() => setActiveChat(chat.chatSessionId)}
             >
-              {chat.title || 'No title'}
+              {chat.text.length > MAX_TITLE_LENGTH ? `${chat.text.substring(0, MAX_TITLE_LENGTH)}...` : chat.text}
             </li>
           ))}
         </ul>
@@ -43,9 +186,12 @@ const Dashboard: React.FC = () => {
             <div className="flex-1 flex justify-center">
               <h1 className="text-2xl font-bold">Welcome {user.email}</h1>
             </div>
-            <Link to="/" className="text-blue-200 hover:text-white ml-4">
+            <button
+              className="text-blue-200 hover:text-white ml-4"
+              onClick={handleLogout}
+            >
               Logout
-            </Link>
+            </button>
           </div>
         </header>
 
@@ -62,8 +208,7 @@ const Dashboard: React.FC = () => {
                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`p-3 rounded-lg text-white max-w-xs ${msg.sender === 'user' ? 'bg-blue-500' : msg.sender === 'system' ? 'bg-green-500' : 'bg-gray-300 text-black'
-                        }`}
+                      className={`p-3 rounded-lg text-white max-w-xs ${msg.sender === 'user' ? 'bg-blue-500' : 'bg-green-500'}`}
                     >
                       <p>{msg.text}</p>
                     </div>
@@ -84,6 +229,7 @@ const Dashboard: React.FC = () => {
             />
             <button
               className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              onClick={handleSend}
             >
               Send
             </button>

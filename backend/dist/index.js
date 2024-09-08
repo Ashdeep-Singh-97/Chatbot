@@ -77,12 +77,23 @@ app.post('/api/v1/signin', (0, zodCheck_1.validateSchema)(zod_1.userSchema), (re
 }));
 app.post('/api/v1/new', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const email = req.body.email;
-    const findUser = yield db_1.User.findOne({ email });
-    const session = new db_1.ChatSession({
-        userId: findUser === null || findUser === void 0 ? void 0 : findUser._id.toString()
-    });
-    yield session.save();
-    return res.status(200).json({ session });
+    try {
+        // Find the user
+        const findUser = yield db_1.User.findOne({ email });
+        if (!findUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        // Create and save a new chat session
+        const session = new db_1.ChatSession({
+            userId: findUser._id.toString()
+        });
+        yield session.save();
+        return res.status(200).json({ session });
+    }
+    catch (error) {
+        console.error('Error creating new chat session:', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
 }));
 app.post('/api/v1/chat', authMiddleware_1.checkAuth, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const message = req.body.message;
@@ -97,7 +108,7 @@ app.post('/api/v1/chat', authMiddleware_1.checkAuth, (req, res) => __awaiter(voi
         iv: iv.toString('hex')
     });
     yield chatMessage.save();
-    const answer = (0, chatbot_1.default)(message);
+    const answer = yield (0, chatbot_1.default)(message);
     const encryptedReply = (0, encryption_1.encryptText)(answer, key, iv);
     chatMessage = new db_1.ChatMessage({
         chatSessionId: sessionId,
