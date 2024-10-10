@@ -155,9 +155,9 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 overflow-clip" style={{ backgroundColor: '#ebe8e0' }}>
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-200 p-4 shadow-md">
+      <aside className="w-64 bg-gray-200 p-4 shadow-md" style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#ebe8e0' }}>
         <button
           className="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           onClick={() => window.location.reload()}
@@ -179,15 +179,15 @@ const Dashboard: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#ebe8e0' }}>
         {/* Header */}
-        <header className="bg-blue-600 text-white p-4 shadow-md">
+        <header className="bg-gradient-to-r from-blue-300 via-blue-800 to-blue-600 text-white p-4 shadow-md rounded-xl">
           <div className="container mx-auto flex items-center">
             <div className="flex-1 flex justify-center">
               <h1 className="text-2xl font-bold">Welcome {user.email}</h1>
             </div>
             <button
-              className="text-blue-200 hover:text-white ml-4"
+              className="text-blue-200 hover:text-white ml-4 font-bold underline text-md"
               onClick={handleLogout}
             >
               Logout
@@ -196,9 +196,9 @@ const Dashboard: React.FC = () => {
         </header>
 
         {/* Chat Area */}
-        <main className="flex-1 p-4 flex flex-col">
-          <div className="flex-1 overflow-auto bg-white rounded-lg shadow-md p-4">
-            <div className="space-y-4">
+        <main className="flex-1 p-4 flex flex-col" >
+          <div className="flex-1 bg-white p-4" style={{ backgroundColor: '#ebe8e0' }}>
+            <div className="space-y-1">
               {messages.length === 0 ? (
                 <p>No messages available.</p>
               ) : (
@@ -208,7 +208,7 @@ const Dashboard: React.FC = () => {
                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`p-3 rounded-lg text-white max-w-xs ${msg.sender === 'user' ? 'bg-blue-500' : 'bg-green-500'}`}
+                      className={`p-3 rounded-lg text-white max-w-xs ${msg.sender === 'user' ? 'bg-blue-600' : 'bg-green-600'}`}
                     >
                       <p>{msg.text}</p>
                     </div>

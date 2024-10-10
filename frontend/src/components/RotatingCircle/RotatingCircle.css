@@ -1,0 +1,14 @@
+
+.circle {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    border-radius: 50%;
+    background-image: url('/public/glow.png'); /* Color of the sun */
+    background-size: cover; /* Make the image cover the circle */
+    /* background-position: center; Center the image */
+    /* bottom: 50%; */
+    /* left: 55%;  */
+    z-index: 20; /* Ensure it's on top */
+}
+
