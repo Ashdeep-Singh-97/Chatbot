@@ -9,4 +9,7 @@ export default defineConfig({
     host: true, // or just omit this line
     port: 5173,
   },
+  build: {
+    outDir: 'dist', // Ensure it outputs to 'dist'
+  },
 })
