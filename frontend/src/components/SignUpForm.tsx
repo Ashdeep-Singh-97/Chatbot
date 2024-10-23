@@ -26,7 +26,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ toggleForm, navigateToHome }) =
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3500/api/v1/signup', { email, password });
+      const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signup', { email, password });
       const token = response.data.token;
       if (response.status === 200) {
         Cookies.set('token', `Bearer ${token}`);

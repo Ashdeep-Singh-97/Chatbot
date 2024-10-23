@@ -113,7 +113,6 @@ app.post('/api/v1/chat', checkAuth, async (req, res) => {
         iv: iv.toString('hex')
     });
     await chatMessage.save();
-
     const answer = await getResponse(message);
 
     const encryptedReply = encryptText(answer, key, iv);

@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
       if (!token) throw new Error('No token found');
 
       const response = await axios.post(
-        'http://localhost:3500/api/v1/history',
+        'https://chatbot-sigma-ashy.vercel.app/api/v1/history',
         { email: user.email },
         {
           headers: {
@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
       if (!token) throw new Error('No token found');
 
       const response = await axios.post(
-        `http://localhost:3500/api/v1/session?id=${encodeURIComponent(activeChat)}`,
+        `https://chatbot-sigma-ashy.vercel.app/api/v1/session?id=${encodeURIComponent(activeChat)}`,
         { email: user.email },
         {
           headers: {
@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
       if (!token) throw new Error('No token found');
       console.log("ID before hitting chat endpoint in handlesend",currentChatId);
       const response = await axios.post(
-        `http://localhost:3500/api/v1/chat?id=${encodeURIComponent(currentChatId)}`,
+        `https://chatbot-sigma-ashy.vercel.app/api/v1/chat?id=${encodeURIComponent(currentChatId)}`,
         { email: user.email, message: message },
         {
           headers: {
@@ -129,7 +129,7 @@ const Dashboard: React.FC = () => {
       if (!token) throw new Error('No token found');
 
       const response = await axios.post(
-        'http://localhost:3500/api/v1/new',
+        'https://chatbot-sigma-ashy.vercel.app/api/v1/new',
         { email: user.email },
         {
           headers: {
@@ -155,88 +155,89 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 overflow-clip" style={{ backgroundColor: '#ebe8e0' }}>
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-200 p-4 shadow-md" style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#ebe8e0' }}>
-        <button
-          className="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          onClick={() => window.location.reload()}
-          disabled={creatingNewChat}
+    <div className="flex min-h-screen bg-gray-100" style={{ backgroundColor: '#ebe8e0' }}>
+  {/* Sidebar */}
+  <aside className="w-64 bg-gray-200 p-4 shadow-md" style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#ebe8e0' }}>
+    <button
+      className="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      onClick={() => window.location.reload()}
+      disabled={creatingNewChat}
+    >
+      Start New Chat
+    </button>
+    <ul>
+      {chatHistory.map(chat => (
+        <li
+          key={chat.chatSessionId}
+          className={`cursor-pointer mb-2 p-2 rounded-lg ${activeChat === chat.chatSessionId ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
+          onClick={() => setActiveChat(chat.chatSessionId)}
         >
-          Start New Chat
+          {chat.text.length > MAX_TITLE_LENGTH ? `${chat.text.substring(0, MAX_TITLE_LENGTH)}...` : chat.text}
+        </li>
+      ))}
+    </ul>
+  </aside>
+
+  {/* Main Content */}
+  <div className="flex-1 flex flex-col" style={{ height: '100vh', backgroundColor: '#ebe8e0' }}>
+    {/* Header */}
+    <header className="sticky top-0 z-10 bg-gradient-to-r from-blue-300 via-blue-800 to-blue-600 text-white p-4 shadow-md rounded-xl">
+      <div className="container mx-auto flex items-center">
+        <div className="flex-1 flex justify-center">
+          <h1 className="text-2xl font-bold">Welcome {user.email}</h1>
+        </div>
+        <button
+          className="text-blue-200 hover:text-white ml-4 font-bold underline text-md"
+          onClick={handleLogout}
+        >
+          Logout
         </button>
-        <ul>
-          {chatHistory.map(chat => (
-            <li
-              key={chat.chatSessionId}
-              className={`cursor-pointer mb-2 p-2 rounded-lg ${activeChat === chat.chatSessionId ? 'bg-blue-600 text-white' : 'bg-gray-300'}`}
-              onClick={() => setActiveChat(chat.chatSessionId)}
-            >
-              {chat.text.length > MAX_TITLE_LENGTH ? `${chat.text.substring(0, MAX_TITLE_LENGTH)}...` : chat.text}
-            </li>
-          ))}
-        </ul>
-      </aside>
+      </div>
+    </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#ebe8e0' }}>
-        {/* Header */}
-        <header className="bg-gradient-to-r from-blue-300 via-blue-800 to-blue-600 text-white p-4 shadow-md rounded-xl">
-          <div className="container mx-auto flex items-center">
-            <div className="flex-1 flex justify-center">
-              <h1 className="text-2xl font-bold">Welcome {user.email}</h1>
+    {/* Chat Area */}
+    <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '80px' }}> {/* Adjusted padding for input height */}
+      <div className="p-4 space-y-1">
+        {messages.length === 0 ? (
+          <p>No messages available.</p>
+        ) : (
+          messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`p-3 rounded-lg text-white max-w-xs ${msg.sender === 'user' ? 'bg-blue-600' : 'bg-green-600'}`}
+              >
+                <p>{msg.text}</p>
+              </div>
             </div>
-            <button
-              className="text-blue-200 hover:text-white ml-4 font-bold underline text-md"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
-        </header>
-
-        {/* Chat Area */}
-        <main className="flex-1 p-4 flex flex-col" >
-          <div className="flex-1 bg-white p-4" style={{ backgroundColor: '#ebe8e0' }}>
-            <div className="space-y-1">
-              {messages.length === 0 ? (
-                <p>No messages available.</p>
-              ) : (
-                messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`p-3 rounded-lg text-white max-w-xs ${msg.sender === 'user' ? 'bg-blue-600' : 'bg-green-600'}`}
-                    >
-                      <p>{msg.text}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Message Input */}
-          <div className="mt-4 flex items-center">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 p-2 border rounded-lg border-gray-300 shadow-sm"
-            />
-            <button
-              className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              onClick={handleSend}
-            >
-              Send
-            </button>
-          </div>
-        </main>
+          ))
+        )}
       </div>
     </div>
+
+    {/* Message Input */}
+    <div className="fixed bottom-0 left-0 right-0 pb-4 px-14 pt-3 flex items-center" style={{ left: '16rem', width: 'calc(100% - 16rem)', backgroundColor: '#ebe8e0' }}>
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message..."
+        className="flex-1 p-2 border rounded-lg border-gray-300 shadow-sm"
+      />
+      <button
+        className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        onClick={handleSend}
+      >
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
   );
 };
 
