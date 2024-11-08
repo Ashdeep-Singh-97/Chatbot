@@ -53,7 +53,7 @@ const landing: React.FC = () => {
           )}
         </div>
         
-        <div className='page-down absolute bottom-44 flex items-center mt-6 px-4 border border-gray-600 py-3 rounded-lg bg-white'>
+        {/* <div className='page-down absolute bottom-44 flex items-center mt-6 px-4 border border-gray-600 py-3 rounded-lg bg-white'>
           <div className="px-1 py-0.5 border border-gray-600 text-white rounded-xl mr-2 bg-blue-700">
             new
           </div>
@@ -67,7 +67,7 @@ const landing: React.FC = () => {
 
         <div className='page-down absolute bottom-12 font-mono'>
           By Arsh
-        </div>
+        </div> */}
       </div>
     </div>
   );
