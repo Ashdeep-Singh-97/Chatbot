@@ -19,7 +19,9 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
   // Custom function to handle both actions
   const handleCustomAction = async () => {
     try {
-      const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin', { email, password });
+      const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin',
+        { email, password },
+        { withCredentials: true });
       const token = response.data.token;
       if (response.status === 200) {
         Cookies.set('token', `Bearer ${token}`);
