@@ -31,7 +31,8 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
           }
         });
       const token = response.data.token;
-      stat = response.status;
+      // stat = response.status;
+      console.log(response.status);
       if (response.status === 200) {
         Cookies.set('token', `Bearer ${token}`);
         console.log('Sign in successful');
