@@ -12,7 +12,7 @@ import cors from 'cors';
 
 const app = express();
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'https://chatbot-cfpo.vercel.app/',
+  origin: 'https://chatbot-cfpo.vercel.app/',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -209,8 +209,6 @@ app.post('/api/v1/history', checkAuth, async (req, res) => {
     }
 });
 
-// app.listen(port, () => {
-//     console.log(`Server is running at http://localhost:${port}`);
-// });
-
-export default app;
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+});

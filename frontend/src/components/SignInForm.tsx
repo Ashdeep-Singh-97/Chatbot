@@ -19,16 +19,16 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
   // Custom function to handle both actions
   const handleCustomAction = async () => {
     try {
-      const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin', {
-        email: 'your-email@example.com',
-        password: 'yourpassword',
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': 'https://chatbot-cfpo.vercel.app',
-        },
-        withCredentials: true, // This ensures credentials are sent
-      });
+      const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin',
+        { email, password },
+        {
+          withCredentials: true,
+          // Allow 204 No Content as a valid status
+          validateStatus: function (status) {
+            // Accept status codes 2xx and 204 as valid
+            return status >= 200 && status < 300 || status === 204;
+          }
+        });
       const token = response.data.token;
       // stat = response.status;
       console.log(response.status);
