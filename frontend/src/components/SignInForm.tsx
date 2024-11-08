@@ -17,6 +17,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
     toggleForm();
   };
   // Custom function to handle both actions
+  let stat = 1;
   const handleCustomAction = async () => {
     try {
       const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin',
@@ -30,6 +31,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
           }
         });
       const token = response.data.token;
+      stat = response.status;
       if (response.status === 200) {
         Cookies.set('token', `Bearer ${token}`);
         console.log('Sign in successful');
@@ -43,6 +45,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
     } catch (error : any) {
       setError('An error occurred. Please try again later.');
       console.log("Error Is : ", error);
+      console.log("REsponse , " , stat);
     }
   };
 
