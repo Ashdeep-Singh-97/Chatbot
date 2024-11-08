@@ -31,7 +31,6 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
     } catch (error : any) {
       setError('An error occurred. Please try again later.');
       console.log("Error Is : ", error);
-      
     }
   };
 
