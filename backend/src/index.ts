@@ -12,7 +12,7 @@ import cors from 'cors';
 
 const app = express();
 const corsOptions = {
-  origin: 'https://chatbot-cfpo.vercel.app/',
+  origin: process.env.CORS_ORIGIN || 'https://chatbot-cfpo.vercel.app/',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
