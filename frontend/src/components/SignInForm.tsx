@@ -21,13 +21,15 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
     try {
       const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin', { email, password });
       const token = response.data.token;
-      // if (response.status === 200) {
+      if (response.status === 200) {
         Cookies.set('token', `Bearer ${token}`);
         console.log('Sign in successful');
         navigateToHome(email);
-      // } else {
-        // setError('Sign in failed. Please try again.');
-      // }
+      } else if (response.status === 204) {
+        setError('Signin attempt did not provide any content. Try again.');
+      }else {
+        setError('Sign in failed. Please try again.');
+      }
     } catch (error : any) {
       setError('An error occurred. Please try again later.');
       console.log("Error Is : ", error);
