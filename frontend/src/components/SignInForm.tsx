@@ -27,6 +27,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
         navigateToHome(email);
       } else if (response.status === 204) {
         setError('Signin attempt did not provide any content. Try again.');
+        console.log("Response 204");
       }else {
         setError('Sign in failed. Please try again.');
       }
