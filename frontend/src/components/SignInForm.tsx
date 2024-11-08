@@ -21,7 +21,14 @@ const SignInForm: React.FC<SignInFormProps> = ({ toggleForm, navigateToHome }) =
     try {
       const response = await axios.post('https://chatbot-sigma-ashy.vercel.app/api/v1/signin',
         { email, password },
-        { withCredentials: true });
+        {
+          withCredentials: true,
+          // Allow 204 No Content as a valid status
+          validateStatus: function (status) {
+            // Accept status codes 2xx and 204 as valid
+            return status >= 200 && status < 300 || status === 204;
+          }
+        });
       const token = response.data.token;
       if (response.status === 200) {
         Cookies.set('token', `Bearer ${token}`);
